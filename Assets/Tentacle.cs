@@ -23,6 +23,8 @@ public class Tentacle : MonoBehaviour
     Vector3 startPos;
     float t;
 
+    bool isForward;
+
 
 
     private void Start()
@@ -43,11 +45,21 @@ public class Tentacle : MonoBehaviour
         lineRenderer.SetPositions(points);
     }
 
-    public void SetTipTarget(Vector3 targ)
+    private void OnDrawGizmos()
+    {
+        if (isForward)
+            Gizmos.color = Color.red;
+        else
+            Gizmos.color = Color.green;
+        Gizmos.DrawSphere(tipTarget, 0.3f);
+    }
+
+    public void SetTipTarget(Vector3 targ, bool moveAsForward)
     {
         prevTipTarget = tipTarget;
         tipTarget = targ;
         startPos = controlNodes[0].position;
+        isForward = moveAsForward;
     }
 
     private void LerpTip()
