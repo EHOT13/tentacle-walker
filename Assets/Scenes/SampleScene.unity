@@ -527,6 +527,8 @@ MonoBehaviour:
     type: 3}
   bodyTransform: {fileID: 1726288570}
   tentaclesCount: 15
+  accel: 0.7
+  maxSpeed: 5
   floorNormal: {x: 0, y: 0, z: 0}
 --- !u!4 &1698041209
 Transform:
