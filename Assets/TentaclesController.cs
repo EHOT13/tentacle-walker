@@ -3,13 +3,20 @@ using UnityEngine;
 
 public class TentaclesController : MonoBehaviour
 {
+    bool useNewAlgoritm
+    {
+        get { return mode == Mode.Spider; }
+    }
+    
+    public enum Mode { Spider, Ebaka }
+    public Mode mode;
+
     public GameObject tentaclePrefab;
     public Transform bodyTransform;
     public int tentaclesCount;
     List<Tentacle> tentacles;
     List<Vector3> offsets;
-    float[] nextTimesToMove;
-    float nextTimeCanMoveLeg;
+    float[] randomCoefficients;
     Vector3 moveDirection;
     Vector3 normalToDirection;
 
@@ -23,16 +30,25 @@ public class TentaclesController : MonoBehaviour
     Quaternion normalRotation;
 
     int nextLegIndex;
+    float nextTimeCanMoveLeg;
 
-    float height;
+    float height
+    {
+        get
+        {
+            if (mode == Mode.Ebaka)
+                return 2.4f;
+            else
+                return 1.7f;
+        }
+    }
 
     private void Start()
     {
-        height = bodyTransform.position.y;
         floorNormal = Vector3.up;
         tentacles = new List<Tentacle>();
         offsets = new List<Vector3>();
-        nextTimesToMove = new float[tentaclesCount];
+        randomCoefficients = new float[tentaclesCount];
         for (int i = 0; i < tentaclesCount; i++)
         {
             GameObject go = Instantiate(tentaclePrefab);
@@ -42,12 +58,18 @@ public class TentaclesController : MonoBehaviour
             Vector2 random = Random.insideUnitCircle * 2;
             tentacle.tipTarget = new Vector3(transform.position.x, 0, transform.position.z) + new Vector3(random.x, 0, random.y);
             offsets.Add(tentacle.tipTarget);
+            randomCoefficients[i] = Mathf.Lerp(0.8f, 1.2f, (float)i / (tentaclesCount - 1));
             tentacles.Add(tentacle);
         }
     }
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            mode = 1 - mode;
+        }
+
         RaycastHit hit;
 
         if (Physics.SphereCast(transform.position + floorNormal, 0.1f, -transform.up, out hit))
@@ -92,44 +114,40 @@ public class TentaclesController : MonoBehaviour
             moveDirection.Normalize();
             normalToDirection = Vector3.Cross(moveDirection, floorNormal);
 
-            
+            if (useNewAlgoritm)
+            { 
             for (int i = 0; i < tentacles.Count; i++)
             {
                 bool isForwardLeg = IsLegForward(i, moveDirection);
                 float distance = (tentacles[i].tipTarget - moveDirection * 2f - transform.position).magnitude;
-                if ((nextTimesToMove[i] < Time.time && nextTimeCanMoveLeg < Time.time && isForwardLeg) ||
-                    (distance > 4 && nextTimeCanMoveLeg < Time.time) || distance > 5)
+                if (isForwardLeg || distance > 4)
                 {
                     nextLegIndex = (i + 1) % tentacles.Count;
 
                     Vector3 dir;
                     if (isForwardLeg)
-                        dir = (offsets[i] + moveDirection * 2f - height * floorNormal).normalized;
+                        dir = (moveDirection * 2.5f + normalRotation * offsets[i] - height * floorNormal).normalized;
                     else
-                        dir = (offsets[i] + moveDirection * 0.8f - height * floorNormal).normalized;
+                        dir = (moveDirection * 1f + normalRotation * offsets[i] - height * floorNormal).normalized;
 
+                    Vector3 target;
                     if (Physics.Raycast(transform.position  + height * floorNormal, dir, out hit, 5))
                     {
-                        Vector3 target = hit.point;
-                        if ((target - tentacles[i].tipTarget).magnitude > 0)
-                        {
-                            nextTimesToMove[i] = Time.time + 0.5f;
-                            //if (isForwardLeg)
-                            nextTimeCanMoveLeg = Time.time + 0.5f;
-                            tentacles[i].SetTipTarget(target, isForwardLeg);
-                        }
+                        target = hit.point;
                     }
                     else
                     {
-                        nextTimesToMove[i] = Time.time + 0.2f;
-                        if (isForwardLeg)
-                            nextTimeCanMoveLeg = Time.time + 0.5f;
-                        tentacles[i].SetTipTarget(transform.position + dir * 3 + floorNormal * 1f, isForwardLeg);
+                        target = transform.position + moveDirection * Random.Range(0.5f, 1.5f) + floorNormal * Random.Range(-1f, -0.5f) + normalRotation * offsets[i];
+                    }
+                    if ((target - tentacles[i].tipTarget).magnitude > 3 * randomCoefficients[i])
+                    {
+                        tentacles[i].SetTipTarget(target, isForwardLeg);
                     }
                 }
 
             }
-            /*
+            }
+            else
             
             for (int i = 0; i < tentacles.Count; i++)
             {
@@ -143,29 +161,31 @@ public class TentaclesController : MonoBehaviour
                     float proj = Vector3.Dot(tentacles[i].tipTarget - transform.position, normalToDirection);
                     proj = Mathf.Sign(proj) * Random.value * 2;
                     Vector3 dir = (moveDirection * 2.5f + proj * normalToDirection - height * floorNormal).normalized;
-                    
+                    //Vector3 dir = (moveDirection * 2.5f + normalRotation * offsets[i] - height * floorNormal).normalized;
+
                     if (Physics.Raycast(transform.position + height * floorNormal, dir, out hit, 5))
                     {
                         Vector3 target = hit.point;
-                        tentacles[i].SetTipTarget(target);
+                        tentacles[i].SetTipTarget(target, false);
                     }
                     else
                     {
-                        tentacles[i].SetTipTarget(transform.position + dir * 3 + floorNormal * 1f);
+                        tentacles[i].SetTipTarget(transform.position + dir * 3 + floorNormal * 1f, false);
                     }
                 }
 
             }
-            */
+            
+
             
         }
     }
 
     bool IsLegForward(int ind, Vector3 dir)
     {
-        float proj = Vector3.Dot((tentacles[ind].tipTarget - transform.position).normalized, dir);
-        //float proj = Vector3.Dot(offsets[ind], dir);
-        return proj > -0.2f;
+        //float proj = Vector3.Dot((tentacles[ind].tipTarget - transform.position).normalized, dir);
+        float proj = Vector3.Dot(offsets[ind], dir);
+        return proj > -0.1f;
     }
 
     private void OnDrawGizmos()

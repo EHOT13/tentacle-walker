@@ -29,9 +29,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 1297813848245146675}
-  - {fileID: 5771697932536578072}
   - {fileID: 1297813848479928759}
+  - {fileID: 5771697932536578072}
+  - {fileID: 1297813848245146675}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -80,16 +80,17 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  smoothTime: 0.07
-  upMagnitude: 1
+  kneeCurvature: 0.7
+  kneeDistance: 0.64
+  smoothTime: 0.08
   body: {fileID: 0}
   controller: {fileID: 0}
   tipTarget: {x: 0, y: 0, z: 0}
-  controlNodes:
+  referencePoints:
   - {fileID: 1297813848479928759}
   - {fileID: 5771697932536578072}
   - {fileID: 1297813848245146675}
-  segmentsCount: 7
+  pointsPerSegment: 10
 --- !u!120 &1297813847905059854
 LineRenderer:
   m_ObjectHideFlags: 0
@@ -133,7 +134,7 @@ LineRenderer:
   - {x: 0, y: 0, z: 1}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.15
+    widthMultiplier: 0.3
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -225,7 +226,7 @@ Transform:
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_Children: []
   m_Father: {fileID: 1297813847905059848}
-  m_RootOrder: 0
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1297813848245146685
 MeshFilter:
@@ -303,7 +304,7 @@ Transform:
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_Children: []
   m_Father: {fileID: 1297813847905059848}
-  m_RootOrder: 2
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1297813848479928753
 MeshFilter:
