@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class TentaclesController : MonoBehaviour
@@ -11,6 +10,10 @@ public class TentaclesController : MonoBehaviour
     List<float> offsets;
     Vector3 moveDirection;
     Vector3 normalToDirection;
+
+    public float accel = 0.7f;
+    private float velocity=0.0f;
+    public float maxSpeed = 5.0f;
 
     public Vector3 floorNormal;
     Vector3 onFloorPosition;
@@ -44,7 +47,7 @@ public class TentaclesController : MonoBehaviour
     private void Update()
     {
         RaycastHit hit;
-        
+
         if (Physics.SphereCast(transform.position + floorNormal, 0.1f, -transform.up, out hit))
         {
             targetNormal = hit.normal;
@@ -58,22 +61,38 @@ public class TentaclesController : MonoBehaviour
         float z = Input.GetAxis("Vertical");
         moveDirection = new Vector3(x, 0, z);
 
-        moveDirection = normalRotation * moveDirection;
+        //moveDirection = normalRotation * moveDirection;
         bodyTransform.position = Vector3.Lerp(bodyTransform.position, transform.position + floorNormal * height, 0.2f);
 
         transform.position = onFloorPosition;
 
         if (moveDirection.magnitude > 0f)
         {
-            transform.position += 5 * moveDirection * Time.deltaTime;
+            velocity += accel;
+            if (velocity > maxSpeed)
+                velocity = maxSpeed;
+        }
+        else if (velocity > 0)
+        {
+            velocity -= accel;
+            if (velocity < 0)
+                velocity = 0;
+        }
+        if (velocity > 0)
+        {
+            moveDirection *= velocity;
+            moveDirection = normalRotation * moveDirection;
+            moveDirection = Vector3.ClampMagnitude(moveDirection, velocity);
+            moveDirection *= Time.deltaTime;
+            transform.position += moveDirection;
+            //transform.position += 5 * moveDirection * Time.deltaTime;
 
             moveDirection.Normalize();
             normalToDirection = Vector3.Cross(moveDirection, floorNormal); //new Vector3(-moveDirection.z, 0, moveDirection.x);
 
-
             for (int i = 0; i < tentacles.Count; i++)
             {
-                
+
                 float distance = (tentacles[i].tipTarget - moveDirection * 2 - transform.position).magnitude;
                 if (distance > 4 &&
                     (nextTimeCanMoveLeg < Time.time || distance > 5))
@@ -82,7 +101,7 @@ public class TentaclesController : MonoBehaviour
                     nextTimeCanMoveLeg = Time.time + 0.1f;
                     float proj = Vector3.Dot(tentacles[i].tipTarget - transform.position, normalToDirection);
                     proj = Mathf.Sign(proj) * Random.value * 2;
-                    Vector3 dir = (moveDirection * 2.5f + proj * normalToDirection - height * floorNormal).normalized;
+                    Vector3 dir = (moveDirection * 2.5f + proj * normalToDirection - height * floorNormal).normalized;//2.5 = halfspeed???
                     if (Physics.Raycast(transform.position + height * floorNormal, dir, out hit, 5))
                     {
                         Vector3 target = hit.point;
@@ -96,7 +115,6 @@ public class TentaclesController : MonoBehaviour
 
             }
         }
-        
     }
 
     private void OnDrawGizmos()
